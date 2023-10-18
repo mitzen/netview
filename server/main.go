@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"os"
 )
@@ -33,7 +33,7 @@ func main() {
 }
 
 func handleRequest(conn net.Conn) {
-	buf, read_err := ioutil.ReadAll(conn)
+	buf, read_err := io.ReadAll(conn)
 	if read_err != nil {
 		fmt.Println("failed:", read_err)
 		return
@@ -45,6 +45,5 @@ func handleRequest(conn net.Conn) {
 		fmt.Println("failed:", write_err)
 		return
 	}
-
 	conn.Close()
 }
