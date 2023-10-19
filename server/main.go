@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"net"
 	"os"
 )
@@ -33,17 +32,19 @@ func main() {
 }
 
 func handleRequest(conn net.Conn) {
-	buf, read_err := io.ReadAll(conn)
-	if read_err != nil {
-		fmt.Println("failed:", read_err)
-		return
-	}
-	fmt.Println("Received from client: ", string(buf))
+	defer conn.Close()
+	buffer := make([]byte, 1024)
 
-	_, write_err := conn.Write([]byte("Message received.\n"))
-	if write_err != nil {
-		fmt.Println("failed:", write_err)
-		return
+	_, err := conn.Read(buffer)
+	if err != nil {
+		fmt.Println(err.Error())
 	}
-	conn.Close()
+	fmt.Println("Received from client:", string(buffer))
+
+	// echo data back to client
+	_, err = conn.Write(buffer)
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 }

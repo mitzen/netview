@@ -1,42 +1,45 @@
 package main
 
 import (
-	"fmt"
 	"net"
-	"time"
+	"os"
+)
+
+const (
+	HOST = "localhost"
+	PORT = "3333"
+	TYPE = "tcp"
 )
 
 func main() {
-
-	destination := "localhost:3333"
-	target := destination
-	conn, err := net.Dial("tcp", target)
-	if err != nil {
-		fmt.Printf("%2d: * (Timeout)\n")
-	}
-	defer conn.Close()
-
-	// Set a timeout for reading responses
-	conn.SetDeadline(time.Now().Add(3 * time.Second))
-
-	startTime := time.Now()
-	_, err = conn.Write([]byte("Hello, World!")) // Sending a UDP packet
-	if err != nil {
-		fmt.Printf("%2d: * (Timeout)\n")
-	}
-
-	reply := make([]byte, 1024)
-	_, err = conn.Read(reply) // Receive a response
-	elapsedTime := time.Since(startTime)
+	tcpServer, err := net.ResolveTCPAddr(TYPE, HOST+":"+PORT)
 
 	if err != nil {
-		fmt.Printf("%2d: * (Timeout)\n")
-	} else {
-		remoteAddr := conn.RemoteAddr()
-		fmt.Printf("%2d: %s %.2f ms\n", remoteAddr, float64(elapsedTime.Milliseconds()))
+		println("ResolveTCPAddr failed:", err.Error())
+		os.Exit(1)
 	}
 
-	if destination == conn.RemoteAddr().String() {
-		fmt.Printf("Trace completed in %d hops.\n")
+	conn, err := net.DialTCP(TYPE, nil, tcpServer)
+	if err != nil {
+		println("Dial failed:", err.Error())
+		os.Exit(1)
 	}
+
+	_, err = conn.Write([]byte("This is a message"))
+	if err != nil {
+		println("Write data failed:", err.Error())
+		os.Exit(1)
+	}
+
+	// getting data from server
+	received := make([]byte, 1024)
+	_, err = conn.Read(received)
+	if err != nil {
+		println("Read data failed:", err.Error())
+		os.Exit(1)
+	}
+
+	println("Received message:", string(received))
+
+	conn.Close()
 }
