@@ -8,36 +8,46 @@ import (
 
 const (
 	CONN_HOST = "localhost"
-	CONN_TYPE = "ip4"
+	CONN_PORT = "3333"
+	CONN_TYPE = "udp4"
 )
 
 func main() {
 
-	ipServer, err := net.ResolveIPAddr(CONN_TYPE, CONN_HOST)
-
+	serverUDP, err := net.ResolveUDPAddr("udp4", CONN_HOST+":"+CONN_PORT)
 	if err != nil {
-		fmt.Println("unable to resolve ip address", err.Error())
-		os.Exit(1)
+		fmt.Println(err)
+		return
 	}
 
-	conn, err := net.ListenIP("ip4:icmp", ipServer)
+	conn, err := net.ListenUDP(CONN_TYPE, serverUDP)
 	if err != nil {
 		fmt.Println("Error listening:", err.Error())
 		os.Exit(1)
 	}
 	defer conn.Close()
-	fmt.Println("Listening on " + CONN_HOST)
 
-	received := make([]byte, 1024)
+	fmt.Println("Listening on " + CONN_HOST + ":" + CONN_PORT)
+
+	buffer := make([]byte, 1024)
+
 	for {
-		_, _, err := conn.ReadFromIP(received)
+
+		n, addr, err := conn.ReadFromUDP(buffer)
+
 		if err != nil {
 			fmt.Println("Error accepting: ", err.Error())
 			os.Exit(1)
 		}
 
-		println("Received message:", string(received))
-		conn.Close()
+		fmt.Print("-> ", string(buffer[0:n]))
+
+		data := []byte("hello back!")
+		_, err = conn.WriteToUDP(data, addr)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
 }
 
